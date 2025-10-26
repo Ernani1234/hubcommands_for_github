@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="540" viewBox="0 0 1200 540" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1e14"/>
+      <stop offset="100%" stop-color="#081910"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="540" fill="url(#bg)"/>
+
+  <!-- Scanlines -->
+  <g opacity="0.12">
+    <rect x="0" y="0" width="1200" height="2" fill="#00ff8f">
+      <animate attributeName="y" values="0;540" dur="4.5s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <!-- Header -->
+  <g filter="url(#glow)">
+    <text x="40" y="70" fill="#00ff8f" font-family="VT323, monospace" font-size="44">Catálogo de Comandos</text>
+    <text x="40" y="110" fill="#a6ffdc" font-family="VT323, monospace" font-size="22">busque, copie, favorite</text>
+  </g>
+
+  <!-- Categories list -->
+  <g stroke="#00ff8f" fill="none" opacity="0.9">
+    <rect x="30" y="140" width="540" height="360" rx="8" ry="8"/>
+  </g>
+  <g filter="url(#glow)" fill="#00ff8f" font-family="VT323, monospace" font-size="28">
+    <text x="60" y="180">› Branches</text>
+    <text x="60" y="220">› Commits</text>
+    <text x="60" y="260">› Rebase</text>
+    <text x="60" y="300">› Stash</text>
+    <text x="60" y="340">› Tags</text>
+    <text x="60" y="380">› Remotes</text>
+    <text x="60" y="420">› Merge / Reset / Revert</text>
+  </g>
+
+  <!-- Example card -->
+  <g stroke="#00ff8f" fill="none" opacity="0.9">
+    <rect x="600" y="140" width="560" height="360" rx="8" ry="8"/>
+  </g>
+  <g filter="url(#glow)" font-family="VT323, monospace" fill="#a6ffdc">
+    <text x="630" y="180" font-size="28">Exemplo</text>
+    <text x="630" y="220" font-size="24">git branch -m old_name new_name</text>
+    <text x="630" y="260" font-size="24">git rebase -i HEAD~3</text>
+    <text x="630" y="300" font-size="24">git stash save "WIP: ajuste modal"</text>
+    <text x="630" y="340" font-size="24">git tag -a v1.2.0 -m "release"</text>
+    <text x="630" y="380" font-size="24">git remote add origin git@github.com:user/repo.git</text>
+  </g>
+
+  <!-- Decorative chevrons -->
+  <g stroke="#00ff8f" stroke-width="2" fill="none" opacity="0.9">
+    <polyline points="580,160 590,170 600,160"/>
+    <polyline points="580,220 590,230 600,220"/>
+    <polyline points="580,280 590,290 600,280"/>
+  </g>
+
+  <!-- Subtle flicker overlay -->
+  <rect x="0" y="0" width="1200" height="540" fill="#00ff8f" opacity="0.02">
+    <animate attributeName="opacity" values="0.02;0.06;0.02" dur="5s" repeatCount="indefinite"/>
+  </rect>
+</svg>

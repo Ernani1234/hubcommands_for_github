@@ -1,0 +1,52 @@
+{
+  "name": "githubs-hub",
+  "version": "1.0.0",
+  "description": "GitHUB's HUB - remembering all commands. A retro Pip-Boy styled hub for Git commands with examples, copy, custom commands, and a live terminal.",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "electron:dev": "electron .",
+    "build:win": "electron-builder --win",
+    "pack:win": "electron-packager . \"GitHUB's HUB\" --platform=win32 --arch=x64 --out=dist --overwrite --icon=app/icon/iconapp.ico",
+    "icon:gen": "node scripts/prepareIcon.js",
+    "prebuild:win": "npm run icon:gen"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.9.3",
+    "electron-packager": "^17.1.2",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.33.5"
+  },
+  "build": {
+    "appId": "com.githubshub.app",
+    "productName": "GitHUB's HUB",
+    "files": [
+      "index.js",
+      "electron/**/*",
+      "server/**/*",
+      "public/**/*",
+      "!{dist,build,out}/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "app/icon/iconapp.ico"
+    },
+    "directories": {
+      "buildResources": "app/icon",
+      "app": "."
+    },
+    "extraMetadata": {
+      "main": "index.js"
+    },
+    "asar": false
+  }
+}

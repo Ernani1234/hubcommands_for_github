@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHUB's HUB — remembering all commands</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --pip-green:#00ff8f;
+      --pip-dark:#091c12;
+      --pip-bright:#a6ffdc;
+      --pip-accent:#29f5a6;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; background:radial-gradient(ellipse at center,var(--pip-dark) 0%, #06150e 100%);
+      color:var(--pip-green);
+      font-family:'VT323', monospace; font-size:20px;
+      overflow:hidden;
+    }
+    .scanlines::before{
+      content:""; position:fixed; top:0; left:0; right:0; bottom:0;
+      background:linear-gradient(rgba(0,0,0,0) 95%, rgba(0,0,0,0.08) 100%);
+      background-size: 100% 3px; pointer-events:none; mix-blend-mode:overlay;
+    }
+    .crt-glow{box-shadow:0 0 40px var(--pip-accent) inset;}
+    .container{padding:24px;}
+    .title{font-size:40px; letter-spacing:2px; text-shadow:0 0 8px var(--pip-bright);}    
+    .subtitle{opacity:.9;}
+    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px;}
+    .panel{border:2px solid var(--pip-green); border-radius:10px; padding:16px; background:rgba(12,30,22,0.6);}    
+    .btn{display:inline-flex; align-items:center; gap:8px; border:2px solid var(--pip-green); padding:8px 12px; border-radius:8px; cursor:pointer; color:var(--pip-green); background:transparent;}
+    .btn:hover{background:rgba(0,255,143,0.1);}    
+    .icon{font-size:22px;}
+    .command{display:flex; justify-content:space-between; align-items:center; border-bottom:1px dotted rgba(0,255,143,0.25); padding:6px 0;}
+    .copy{cursor:pointer;}
+    .search{width:100%; padding:8px; background:#0c1f16; color:var(--pip-bright); border:2px solid var(--pip-green); border-radius:6px;}
+    .terminal{height:300px; background:#0c1f16; border:2px solid var(--pip-green); border-radius:8px; padding:8px;}
+    a {color: var(--pip-bright);}   
+    /* Scrollable commands area */
+    #commands{ max-height: 60vh; overflow-y:auto; padding-right:8px; }
+    
+    /* Pip-Boy themed scrollbar */
+    #commands{ scrollbar-width: thin; scrollbar-color: var(--pip-green) rgba(12,30,22,0.7); }
+    #commands::-webkit-scrollbar{ width: 10px; }
+    #commands::-webkit-scrollbar-track{ background: rgba(12,30,22,0.7); border-left:2px solid var(--pip-green); }
+    #commands::-webkit-scrollbar-thumb{ background: linear-gradient(180deg, var(--pip-green), var(--pip-accent)); border:2px solid var(--pip-dark); border-radius:8px; box-shadow:0 0 6px rgba(0,255,143,0.35); }
+
+    /* Ícones SVG mínimos estilo Pip-Boy */
+    .pip-icon { display:inline-flex; align-items:center; justify-content:center; line-height:1; }
+    .pip-icon svg { width: 1em; height: 1em; stroke: var(--pip-green); fill: none; stroke-width: 2; }
+    .pip-icon.fill svg { fill: var(--pip-green); stroke: var(--pip-green); }
+
+    /* Chevron animação */
+    .chev { transition: transform 180ms ease; }
+    .chev.open { transform: rotate(180deg); }
+
+    /* Collapsible categories */
+    .cat-group{ margin-top:12px; }
+    .cat-header{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+    .cat-header h3{ margin:0; }
+    .cat-arrow{ font-size:20px; }
+    .cat-body{ display:none; }
+    .btn-info{ padding:4px 8px; }
+
+    /* Cascade animations */
+    @keyframes cascadeIn{ from{ opacity:0; transform:translateY(-6px);} to{ opacity:1; transform:translateY(0);} }
+    @keyframes cascadeOut{ from{ opacity:1; transform:translateY(0);} to{ opacity:0; transform:translateY(-6px);} }
+    .row-anim-in{ animation: cascadeIn 240ms ease-out forwards; }
+    .row-anim-out{ animation: cascadeOut 160ms ease-in forwards; }
+
+    /* Modal (Pip-Boy styled) */
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(6,21,14,0.75); backdrop-filter: blur(2px); z-index:1000; }
+    .modal-content{ width:min(800px, 92vw); max-height:80vh; overflow:auto; border:2px solid var(--pip-green); border-radius:12px; padding:16px; background:rgba(12,30,22,0.85); box-shadow:0 0 24px rgba(0,255,143,0.25); }
+    .modal-content h2{ margin:8px 0 12px; }
+    .info-row{ border-bottom:1px dotted rgba(0,255,143,0.25); padding:8px 0; }
+    code{ background:#0c1f16; border:1px solid var(--pip-green); border-radius:6px; padding:2px 6px; color:var(--pip-bright); }
+  </style>
+</head>
+<body class="scanlines">
+  <div class="container crt-glow">
+    <div class="title">GitHUB's HUB</div>
+    <div class="subtitle">remembering all commands</div>
+    <div style="margin:16px 0; display:flex; gap:10px;">
+      <button class="btn" id="btnCatalog" onclick="showSection('catalog')">Catálogo</button>
+      <button class="btn" id="btnCustom" onclick="showSection('custom')">Custom</button>
+      <button class="btn" id="btnTerminal" onclick="showSection('terminal')">Terminal</button>
+      <button class="btn" id="btnFavorites" onclick="showSection('favorites')">Favoritos</button>
+      <button class="btn" id="btnSettings" onclick="showSection('settings')">Ajustes</button>
+      <button class="btn" id="btnHelp" onclick="showSection('help')">Ajuda</button>
+    </div>
+
+    <div id="catalog" class="panel">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span class="icon" id="searchIcon" title="Pesquisar"></span>
+        <input id="search" class="search" placeholder="Buscar comandos de Git (branch, commit, stash, rebase, cherry-pick...)" />
+        <select id="categoryFilter" class="search" style="max-width:220px;">
+          <option value="">Todas categorias</option>
+        </select>
+      </div>
+      <div id="commands"></div>
+    </div>
+
+    <div id="custom" class="panel" style="display:none;">
+      <div style="margin-bottom:8px;">Crie seu comando customizado:</div>
+      <div style="display:flex; gap:8px;">
+        <input id="cmdName" class="search" placeholder="Nome do comando" />
+        <input id="cmdExec" class="search" placeholder="Linha do comando" />
+        <button class="btn" onclick="addCustom()">➕ Adicionar</button>
+      </div>
+      <div id="customList" style="margin-top:12px;"></div>
+    </div>
+
+    <div id="terminal" class="panel" style="display:none;">
+      <div style="margin-bottom:8px;">Terminal retro:</div>
+      <div id="term" class="terminal"></div>
+      <div style="margin-top:8px;">Dica: pressione Enter para executar. (Em prévia: envia para WebSocket)</div>
+    </div>
+
+    <div id="favorites" class="panel" style="display:none;">
+      <div style="margin-bottom:8px;">Seus favoritos:</div>
+      <div id="favCommands"></div>
+    </div>
+
+    <div id="settings" class="panel" style="display:none;">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+        <label><input type="checkbox" id="scanlinesToggle" checked /> Scanlines</label>
+        <label><input type="checkbox" id="soundToggle" checked /> Sons</label>
+        <label><input type="checkbox" id="animationsToggle" checked /> Animações</label>
+      </div>
+      <div style="margin-top:8px;">Exportar/Importar comandos customizados:</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn" id="exportBtn">📦 Exportar</button>
+        <input type="file" id="importFile" accept="application/json" />
+      </div>
+    </div>
+
+    <div id="help" class="panel" style="display:none;">
+      <div>Atalhos de teclado:</div>
+      <ul>
+        <li>/ ou Ctrl+K = foco na busca</li>
+        <li>c = Catálogo, u = Custom, t = Terminal, f = Favoritos, s = Ajustes</li>
+      </ul>
+      <div>Como usar: pesquise, copie 📋, favorite ⭐, ou execute ▶️ diretamente no terminal retro. Diversão garantida! 👾</div>
+    </div>
+    
+    <!-- Modal de Informações (Pip-Boy) -->
+    <div id="infoModal" class="modal">
+      <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <h2 style="margin:0;">Informações da categoria</h2>
+          <button id="modalClose" class="btn">✖ Fechar</button>
+        </div>
+        <div id="infoContent" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const catalog = [
+      { cat: 'Iniciar', cmd: 'git init', ex: 'Inicia um novo repositório' },
+      { cat: 'Configuração', cmd: 'git config --global user.name "Seu Nome"', ex: 'Define nome global' },
+      { cat: 'Configuração', cmd: 'git config --global user.email "seu@email.com"', ex: 'Define email global' },
+      { cat: 'Status', cmd: 'git status', ex: 'Mostra estado do repositório' },
+      { cat: 'Adicionar', cmd: 'git add .', ex: 'Adiciona todas mudanças' },
+      { cat: 'Adicionar', cmd: 'git add -p', ex: 'Adiciona por partes (interativo)' },
+      { cat: 'Commit', cmd: 'git commit -m "mensagem"', ex: 'Cria um commit' },
+      { cat: 'Commit', cmd: 'git commit --amend', ex: 'Altera último commit' },
+      { cat: 'Commit', cmd: 'git commit --fixup <hash>', ex: 'Cria commit de correção para squash' },
+      { cat: 'Branch', cmd: 'git branch', ex: 'Lista branches' },
+      { cat: 'Branch', cmd: 'git branch -a', ex: 'Lista branches locais e remotas' },
+      { cat: 'Branch', cmd: 'git branch -d <nome>', ex: 'Deleta branch (local)' },
+      { cat: 'Branch', cmd: 'git branch -D <nome>', ex: 'Força deletar branch (local)' },
+      { cat: 'Branch', cmd: 'git switch -c feature-x', ex: 'Cria e troca para branch (novo)' },
+      { cat: 'Checkout', cmd: 'git checkout -b feature-x', ex: 'Cria e troca para branch' },
+      { cat: 'Checkout', cmd: 'git checkout <hash> -- <arquivo>', ex: 'Restaura arquivo para um commit' },
+      { cat: 'Merge', cmd: 'git merge feature-x', ex: 'Faz merge da branch' },
+      { cat: 'Merge', cmd: 'git merge --no-ff feature-x', ex: 'Merge preservando commit de merge' },
+      { cat: 'Rebase', cmd: 'git rebase main', ex: 'Rebase na main' },
+      { cat: 'Rebase', cmd: 'git rebase -i HEAD~3', ex: 'Rebase interativo (squash, fixup...)' },
+      { cat: 'Stash', cmd: 'git stash', ex: 'Guarda mudanças temporariamente' },
+      { cat: 'Stash', cmd: 'git stash list', ex: 'Lista stashes' },
+      { cat: 'Stash', cmd: 'git stash apply', ex: 'Aplica stash (mantém)' },
+      { cat: 'Stash', cmd: 'git stash pop', ex: 'Aplica e remove stash' },
+      { cat: 'Reset', cmd: 'git reset --soft HEAD~1', ex: 'Volta 1 commit (soft)' },
+      { cat: 'Reset', cmd: 'git reset --mixed HEAD~1', ex: 'Volta mantendo mudanças no working dir' },
+      { cat: 'Reset', cmd: 'git reset --hard HEAD~1', ex: 'Volta 1 commit (hard)' },
+      { cat: 'Restore', cmd: 'git restore <arquivo>', ex: 'Restaura arquivo do HEAD' },
+      { cat: 'Restore', cmd: 'git restore --staged <arquivo>', ex: 'Remove arquivo da área de stage' },
+      { cat: 'Revert', cmd: 'git revert <hash>', ex: 'Cria commit que desfaz outro' },
+      { cat: 'Cherry-pick', cmd: 'git cherry-pick <hash>', ex: 'Aplica commit específico' },
+      { cat: 'Cherry-pick', cmd: 'git cherry-pick -n <hash>', ex: 'Aplica sem criar commit (no-commit)' },
+      { cat: 'Tag', cmd: 'git tag v1.0.0', ex: 'Cria tag' },
+      { cat: 'Tag', cmd: 'git tag -a v1.0.0 -m "versão"', ex: 'Cria tag anotada' },
+      { cat: 'Tag', cmd: 'git push origin --tags', ex: 'Envia tags' },
+      { cat: 'Remote', cmd: 'git remote -v', ex: 'Lista remotes' },
+      { cat: 'Remote', cmd: 'git remote add origin <url>', ex: 'Adiciona remoto' },
+      { cat: 'Remote', cmd: 'git remote remove origin', ex: 'Remove remoto' },
+      { cat: 'Remote', cmd: 'git remote set-url origin <url>', ex: 'Atualiza URL do remoto' },
+      { cat: 'Fetch', cmd: 'git fetch', ex: 'Busca atualizações do remoto' },
+      { cat: 'Pull', cmd: 'git pull', ex: 'Baixa mudanças do remoto' },
+      { cat: 'Pull', cmd: 'git pull --rebase', ex: 'Pull com rebase' },
+      { cat: 'Push', cmd: 'git push -u origin main', ex: 'Envia commits para remoto' },
+      { cat: 'Push', cmd: 'git push --force-with-lease', ex: 'Força push com segurança' },
+      { cat: 'Log', cmd: 'git log --oneline --graph --decorate', ex: 'Log compacto' },
+      { cat: 'Log', cmd: 'git reflog', ex: 'Histórico de referências (salva sua pele!)' },
+      { cat: 'Diff', cmd: 'git diff', ex: 'Mostra diferenças' },
+      { cat: 'Diff', cmd: 'git diff --staged', ex: 'Diferenças do que está staged' },
+      { cat: 'Blame', cmd: 'git blame <arquivo>', ex: 'Mostra autores por linha' },
+      { cat: 'Bisect', cmd: 'git bisect start', ex: 'Inicia busca binária por bug' },
+      { cat: 'Bisect', cmd: 'git bisect good', ex: 'Marca commit bom' },
+      { cat: 'Bisect', cmd: 'git bisect bad', ex: 'Marca commit ruim' },
+      { cat: 'Worktree', cmd: 'git worktree add ../wt feature-x', ex: 'Cria worktree para branch' },
+      { cat: 'GC', cmd: 'git gc', ex: 'Coleta lixo e otimiza repositório' },
+      { cat: 'Submodule', cmd: 'git submodule add <url> path', ex: 'Adiciona submodule' },
+      { cat: 'Clean', cmd: 'git clean -fd', ex: 'Remove arquivos não rastreados' }
+    ];
+
+    const elCommands = document.getElementById('commands');
+    const elSearch = document.getElementById('search');
+    const elCustomList = document.getElementById('customList');
+    const elCategory = document.getElementById('categoryFilter');
+    const elFavCommands = document.getElementById('favCommands');
+
+    const state = {
+      sounds: true,
+      animations: true,
+      scanlines: true,
+      favorites: JSON.parse(localStorage.getItem('githubs_hub_favorites')||'[]'),
+      categoryOpen: {}
+    };
+
+    function beep(){
+      if(!state.sounds) return;
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type='square'; o.frequency.setValueAtTime(600, ctx.currentTime);
+      g.gain.setValueAtTime(0.02, ctx.currentTime);
+      o.connect(g).connect(ctx.destination);
+      o.start(); setTimeout(()=>{o.stop(); ctx.close();}, 120);
+    }
+
+    function populateCategories(){
+      const cats = Array.from(new Set(catalog.map(c => c.cat))).sort();
+      cats.forEach(c => {
+        const opt = document.createElement('option'); opt.value=c; opt.textContent=c; elCategory.appendChild(opt);
+        if(!(c in state.categoryOpen)) state.categoryOpen[c] = false;
+      });
+    }
+
+    function renderCommands(filter='', catFilter=''){
+      elCommands.innerHTML='';
+      const filtered = catalog.filter(c => (c.cat+" "+c.cmd+" "+c.ex).toLowerCase().includes(filter.toLowerCase()))
+                              .filter(c => !catFilter || c.cat===catFilter);
+      const groups = {};
+      filtered.forEach(c => { groups[c.cat] = groups[c.cat] || []; groups[c.cat].push(c); });
+      Object.keys(groups).forEach(cat => {
+        const group = document.createElement('div'); group.className='cat-group';
+        const header = document.createElement('div'); header.className='cat-header';
+        const arrow = document.createElement('span'); arrow.className='cat-arrow'; arrow.innerHTML = iconSVG('chevron');
+        const h = document.createElement('h3'); h.textContent = cat;
+        const infoBtn = document.createElement('button'); infoBtn.className='btn btn-info'; infoBtn.title='Informações'; infoBtn.innerHTML = iconSVG('info');
+        infoBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showCategoryInfo(cat, groups[cat]); });
+        header.appendChild(arrow); header.appendChild(h); header.appendChild(infoBtn);
+        const body = document.createElement('div'); body.className='cat-body';
+
+        // Build rows
+        groups[cat].forEach((item, i) => {
+          const row = document.createElement('div'); row.className='command';
+          const left = document.createElement('div'); left.textContent = item.cmd + ' — ' + item.ex; row.appendChild(left);
+          const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
+          const copy = document.createElement('button'); copy.className='btn'; copy.title='Copiar'; copy.innerHTML = iconSVG('copy'); copy.onclick=()=>{navigator.clipboard.writeText(item.cmd); beep();}; actions.appendChild(copy);
+          const run = document.createElement('button'); run.className='btn'; run.title='Executar'; run.innerHTML = iconSVG('play'); run.onclick=()=>sendToTerminal(item.cmd + '\n'); actions.appendChild(run);
+          const fav = document.createElement('button'); fav.className='btn'; fav.title='Favoritar'; fav.innerHTML = iconSVG(isFav(item.cmd)?'star-filled':'star'); fav.onclick=()=>toggleFav(item.cmd, fav); actions.appendChild(fav);
+          row.appendChild(actions);
+          if(state.categoryOpen[cat]){
+            row.classList.add('row-anim-in');
+            row.style.animationDelay = (i*60)+'ms';
+          }
+          body.appendChild(row);
+        });
+
+        // Initial display state
+        body.style.display = state.categoryOpen[cat] ? 'block' : 'none';
+        const chev = arrow.querySelector('svg'); if(state.categoryOpen[cat]) chev.classList.add('chev','open'); else chev.classList.add('chev');
+
+        // Toggle handler
+        header.onclick = () => toggleCategory(cat, body, arrow);
+
+        group.appendChild(header);
+        group.appendChild(body);
+        elCommands.appendChild(group);
+      });
+    }
+
+    function toggleCategory(cat, body, arrow){
+      const isOpen = !!state.categoryOpen[cat];
+      const chev = arrow.querySelector('svg');
+      if(!isOpen){
+        state.categoryOpen[cat] = true;
+        chev.classList.add('open');
+        body.style.display='block';
+        const rows = Array.from(body.querySelectorAll('.command'));
+        rows.forEach((r,i)=>{ r.classList.remove('row-anim-out'); r.style.animationDelay = (i*60)+'ms'; r.classList.add('row-anim-in'); });
+      } else {
+        const rows = Array.from(body.querySelectorAll('.command'));
+        rows.forEach((r,i)=>{ r.classList.remove('row-anim-in'); r.style.animationDelay = ((rows.length-1 - i)*50)+'ms'; r.classList.add('row-anim-out'); });
+        const totalMs = ((rows.length-1)*50) + 170;
+        setTimeout(()=>{ body.style.display='none'; chev.classList.remove('open'); state.categoryOpen[cat] = false; }, totalMs);
+      }
+    }
+
+    function isFav(cmd){ return state.favorites.includes(cmd); }
+    function toggleFav(cmd, btn){
+      const idx = state.favorites.indexOf(cmd);
+      if(idx>=0){ state.favorites.splice(idx,1); btn.innerHTML = iconSVG('star'); }
+      else { state.favorites.push(cmd); btn.innerHTML = iconSVG('star-filled'); }
+      localStorage.setItem('githubs_hub_favorites', JSON.stringify(state.favorites));
+      renderFavorites();
+    }
+    function renderFavorites(){
+      elFavCommands.innerHTML='';
+      state.favorites.forEach(cmd=>{
+        const row = document.createElement('div'); row.className='command';
+        const left = document.createElement('div'); left.textContent = cmd; row.appendChild(left);
+        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
+        const copy = document.createElement('button'); copy.className='btn'; copy.title='Copiar'; copy.innerHTML = iconSVG('copy'); copy.onclick=()=>{navigator.clipboard.writeText(cmd); beep();}; actions.appendChild(copy);
+        const run = document.createElement('button'); run.className='btn'; run.title='Executar'; run.innerHTML = iconSVG('play'); run.onclick=()=>sendToTerminal(cmd + '\n'); actions.appendChild(run);
+        row.appendChild(actions);
+        elFavCommands.appendChild(row);
+      });
+    }
+
+    const savedCustom = JSON.parse(localStorage.getItem('githubs_hub_custom')||'[]');
+    savedCustom.forEach(({name,exec})=>{
+      const item = document.createElement('div'); item.className='command';
+      const left = document.createElement('div'); left.textContent = name + ' — ' + exec; item.appendChild(left);
+      const copy = document.createElement('button'); copy.className='btn'; copy.title='Copiar'; copy.innerHTML = iconSVG('copy'); copy.onclick=()=>{navigator.clipboard.writeText(exec); beep();}; item.appendChild(copy);
+      elCustomList.appendChild(item);
+    });
+
+    function addCustom(){
+      const name = document.getElementById('cmdName').value.trim();
+      const exec = document.getElementById('cmdExec').value.trim();
+      if(!name || !exec) return;
+      const list = JSON.parse(localStorage.getItem('githubs_hub_custom')||'[]');
+      list.push({name,exec});
+      localStorage.setItem('githubs_hub_custom', JSON.stringify(list));
+      const item = document.createElement('div'); item.className='command';
+      const left = document.createElement('div'); left.textContent = name + ' — ' + exec; item.appendChild(left);
+      const copy = document.createElement('button'); copy.className='btn'; copy.title='Copiar'; copy.innerHTML = iconSVG('copy'); copy.onclick=()=>{navigator.clipboard.writeText(exec); beep();}; item.appendChild(copy);
+      elCustomList.appendChild(item);
+      document.getElementById('cmdName').value='';
+      document.getElementById('cmdExec').value='';
+    }
+
+    function showSection(id){
+      document.getElementById('catalog').style.display = id==='catalog'? 'block':'none';
+      document.getElementById('custom').style.display = id==='custom'? 'block':'none';
+      document.getElementById('terminal').style.display = id==='terminal'? 'block':'none';
+      document.getElementById('favorites').style.display = id==='favorites'? 'block':'none';
+      document.getElementById('settings').style.display = id==='settings'? 'block':'none';
+      document.getElementById('help').style.display = id==='help'? 'block':'none';
+    }
+
+    // Settings
+    const scanToggle = document.getElementById('scanlinesToggle');
+    const soundToggle = document.getElementById('soundToggle');
+    const animToggle = document.getElementById('animationsToggle');
+    scanToggle.addEventListener('change', ()=>{
+      state.scanlines = scanToggle.checked;
+      document.body.className = state.scanlines ? 'scanlines' : '';
+    });
+    soundToggle.addEventListener('change', ()=>{ state.sounds = soundToggle.checked; });
+    animToggle.addEventListener('change', ()=>{ state.animations = animToggle.checked; });
+
+    // Export/Import custom commands
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      const data = localStorage.getItem('githubs_hub_custom')||'[]';
+      const blob = new Blob([data], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'githubs_hub_custom.json'; a.click();
+    });
+    document.getElementById('importFile').addEventListener('change', (e)=>{
+      const file = e.target.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          localStorage.setItem('githubs_hub_custom', reader.result);
+          location.reload();
+        }catch(err){ alert('Falha ao importar: '+err.message); }
+      };
+      reader.readAsText(file);
+    });
+
+    // Init UI
+    populateCategories();
+    renderCommands('', '');
+    renderFavorites();
+    // Aplica ícone de busca
+    try { document.getElementById('searchIcon').innerHTML = iconSVG('search'); } catch {}
+    elSearch.addEventListener('input', ()=>renderCommands(elSearch.value, elCategory.value));
+    elCategory.addEventListener('change', ()=>renderCommands(elSearch.value, elCategory.value));
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e)=>{
+      if(e.key==='/' || (e.ctrlKey && e.key.toLowerCase()==='k')){ document.getElementById('search').focus(); e.preventDefault(); }
+      if(e.key.toLowerCase()==='c') showSection('catalog');
+      if(e.key.toLowerCase()==='u') showSection('custom');
+      if(e.key.toLowerCase()==='t') showSection('terminal');
+      if(e.key.toLowerCase()==='f') showSection('favorites');
+      if(e.key.toLowerCase()==='s') showSection('settings');
+    });
+
+    // WebSocket terminal client
+    // Ajuste de WebSocket para usar a porta atual da página, caindo para 5050
+    let ws;
+    function connectTerminal(){
+      const WS_PORT = location.port || '5050';
+      ws = new WebSocket(`ws://localhost:${WS_PORT}/terminal`);
+      const termEl = document.getElementById('term');
+      const input = document.createElement('input'); input.className='search'; input.placeholder='Digite e Enter';
+      ws.addEventListener('message', (e)=>{
+        const p = document.createElement('div'); p.textContent = e.data; termEl.appendChild(p); termEl.scrollTop = termEl.scrollHeight;
+      });
+      input.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter'){
+          sendToTerminal(input.value + '\n');
+          input.value='';
+        }
+      });
+      termEl.appendChild(input);
+    }
+    function sendToTerminal(text){ try{ ws && ws.send(text); }catch{} }
+    connectTerminal();
+
+    // Info modal: descrições e exemplos por categoria
+    const categoryDescriptions = {
+      'Iniciar': 'Crie um repositório local para começar a versionar seu projeto.',
+      'Configuração': 'Defina sua identidade para os commits e outras preferências do Git.',
+      'Status': 'Veja rapidamente o que mudou, o que está staged e o que não está.',
+      'Adicionar': 'Selecione alterações para entrarem no próximo commit (staging).',
+      'Commit': 'Registre um ponto no histórico com uma mensagem clara sobre a alteração.',
+      'Branch': 'Trabalhe em linhas paralelas de desenvolvimento sem afetar a principal.',
+      'Checkout': 'Mude de commit/branch ou restaure arquivos a um estado específico.',
+      'Merge': 'Integre alterações de uma branch a outra preservando o histórico.',
+      'Rebase': 'Reescreva a base dos commits para um histórico mais linear.',
+      'Stash': 'Guarde alterações temporariamente para trocar de contexto sem perder trabalho.',
+      'Reset': 'Volte commits (soft/mixed/hard) de acordo com a necessidade.',
+      'Restore': 'Restaure conteúdo de arquivos do HEAD ou remova do staging.',
+      'Revert': 'Crie um commit que desfaz outro sem reescrever história.',
+      'Cherry-pick': 'Aplique um commit específico em outra branch.',
+      'Tag': 'Marque pontos importantes (versões) no histórico.',
+      'Remote': 'Gerencie repositórios remotos (URLs, adicionar/remover).',
+      'Fetch': 'Baixe referências remotas sem integrar ao seu trabalho local.',
+      'Pull': 'Atualize sua branch local integrando mudanças remotas.',
+      'Push': 'Envie seus commits para o repositório remoto.',
+      'Log': 'Explore o histórico de commits com diferentes visões.',
+      'Diff': 'Compare alterações entre estados e arquivos.',
+      'Blame': 'Descubra quem alterou cada linha e quando.',
+      'Bisect': 'Ache o bug encontrando o primeiro commit que o introduziu.',
+      'Worktree': 'Crie diretórios de trabalho adicionais apontando para outras branches.',
+      'GC': 'Otimize o repositório removendo lixo e compactando.',
+      'Submodule': 'Inclua outro repositório como dependência versionada.',
+      'Clean': 'Remova arquivos não rastreados para limpar o diretório.'
+    };
+
+    function generateExample(cmd){
+      return cmd
+        .replace(/<hash>/g,'a1b2c3d')
+        .replace(/<nome>/g,'feature-login')
+        .replace(/<arquivo>/g,'src/app.js')
+        .replace(/<url>/g,'https://github.com/user/repo.git')
+        .replace(/path/g,'lib/utils');
+    }
+
+    // Templates de informação por categoria + gerador de explicação por item
+    const infoTemplates = {
+      'Iniciar': { when: 'Quando você quer começar a versionar um projeto local.', steps: ['Abra o terminal na pasta do projeto','Execute git init','Crie arquivos e faça seu primeiro commit'], tips: 'Combine com git config para definir identidade antes de commitar.' },
+      'Configuração': { when: 'Ao configurar nome/email ou preferências de comportamento do Git.', steps: ['Defina user.name e user.email','Opcional: configure aliases úteis','Opcional: configure core.autocrlf conforme seu SO'], tips: 'Use o escopo --global para aplicar ao usuário; sem --global aplica ao repo atual.' },
+      'Status': { when: 'Para ver rapidamente o que mudou, o que está staged e o que não está.', steps: ['Edite arquivos','Execute git status','Decida o que entrar no próximo commit'], tips: 'Combine com git add -p para selecionar partes específicas.' },
+      'Adicionar': { when: 'Ao preparar alterações para o próximo commit (staging).', steps: ['Execute git add . para tudo, ou git add -p para partes','Revise com git status','Prossiga com git commit'], tips: 'Prefira -p para commits menores e fáceis de revisar.' },
+      'Commit': { when: 'Ao registrar um ponto no histórico com uma mensagem clara.', steps: ['Faça staging do que deseja commitar','Execute git commit -m "mensagem"','Se necessário, ajuste com --amend'], tips: 'Escreva mensagens objetivas. Evite commits muito grandes.' },
+      'Branch': { when: 'Para trabalhar em paralelo sem afetar a branch principal.', steps: ['Crie a branch (git switch -c) ou liste (git branch)','Troque de branch quando necessário','Faça commits normalmente'], tips: 'Use nomes descritivos, ex: feature/login, fix/bug-123.' },
+      'Checkout': { when: 'Para mudar de commit/branch ou restaurar arquivos a um estado específico.', steps: ['git checkout -b para criar e trocar','git checkout <hash> -- <arquivo> para restaurar','Verifique com git status'], tips: 'Prefira git switch para trocar de branch nas versões mais novas.' },
+      'Merge': { when: 'Ao integrar alterações de uma branch a outra.', steps: ['Vá para a branch destino','Execute git merge <branch origem>','Resolva conflitos e faça commit de merge'], tips: 'Use --no-ff para preservar o commit de merge quando quiser registrar a união explicitamente.' },
+      'Rebase': { when: 'Para um histórico mais linear, reescrevendo a base dos commits.', steps: ['Vá para sua branch','Execute git rebase <base>','Resolva cada conflito e continue com git rebase --continue'], tips: 'Use com cuidado em branches compartilhadas (pode reescrever história).' },
+      'Stash': { when: 'Ao guardar alterações temporariamente para trocar de contexto.', steps: ['Execute git stash','Troque de branch ou atualize','Recupere com git stash apply ou pop'], tips: 'pop aplica e remove; apply aplica e mantém na pilha.' },
+      'Reset': { when: 'Para voltar commits de acordo com a necessidade (soft/mixed/hard).', steps: ['Escolha o modo: soft, mixed, hard','Execute git reset <target>','Verifique estado com git status'], tips: 'hard altera o working dir; use com cuidado para não perder trabalho.' },
+      'Restore': { when: 'Para restaurar conteúdo de arquivos do HEAD ou remover do staging.', steps: ['git restore <arquivo> para conteúdo do HEAD','git restore --staged para remover do staging','Revise com git status'], tips: 'Substitui alguns usos antigos de git checkout.' },
+      'Revert': { when: 'Ao criar um commit que desfaz outro sem reescrever história.', steps: ['Identifique o commit (hash)','Execute git revert <hash>','Se houver conflito, resolva e finalize'], tips: 'Seguro para branches compartilhadas, pois não reescreve história.' },
+      'Cherry-pick': { when: 'Para aplicar um commit específico em outra branch.', steps: ['Vá para a branch destino','Execute git cherry-pick <hash>','Resolva conflitos se ocorrerem'], tips: 'Use -n para aplicar sem criar commit (no-commit) e revisar junto de outros.' },
+      'Tag': { when: 'Ao marcar versões ou pontos importantes no histórico.', steps: ['Crie tag (leve ou anotada)','Envie com git push origin --tags','Associe releases no GitHub se desejar'], tips: 'Tags anotadas (-a) têm metadados e mensagem.' },
+      'Remote': { when: 'Ao gerenciar repositórios remotos (URLs, adicionar/remover).', steps: ['Liste com git remote -v','Adicione com git remote add origin <url>','Atualize com git remote set-url origin <url>'], tips: 'Mantenha URLs atualizadas, especialmente após migrações.' },
+      'Fetch': { when: 'Para baixar referências remotas sem integrar.', steps: ['Execute git fetch','Inspecione com git log ou git branch -a','Decida se vai integrar via merge/rebase'], tips: 'Bom para revisar antes de integrar com pull.' },
+      'Pull': { when: 'Ao atualizar sua branch local integrando mudanças remotas.', steps: ['Estar na branch correta','Execute git pull (ou --rebase)','Resolva conflitos se houver'], tips: 'Use --rebase para um histórico linear quando apropriado.' },
+      'Push': { when: 'Para enviar seus commits ao repositório remoto.', steps: ['Verifique remotes e branch upstream','Execute git push (ou -u para setar upstream)','Use --force-with-lease com cautela'], tips: 'Evite --force; prefira --force-with-lease para segurança.' },
+      'Log': { when: 'Ao explorar histórico com diferentes visões.', steps: ['Use opções como --oneline --graph --decorate','Filtre por autor, data, paths','Combine com git blame/diff para contexto'], tips: 'Crie aliases para visualização favorita.' },
+      'Diff': { when: 'Ao comparar alterações entre estados e arquivos.', steps: ['Execute git diff','Use --staged para o que está staged','Compare commits específicos se necessário'], tips: 'Integre com ferramentas de diff gráficas para melhor visualização.' },
+      'Blame': { when: 'Para descobrir quem alterou cada linha e quando.', steps: ['Execute git blame <arquivo>','Navegue pelo histórico com log','Contextualize com PRs/commits'], tips: 'Útil para entender contexto; evite usar para apontar culpa.' },
+      'Bisect': { when: 'Ao buscar o commit que introduziu um bug.', steps: ['git bisect start','Marque good/bad até localizar','Finalize e corrija'], tips: 'Automatize testes para agilizar a bisectagem.' },
+      'Worktree': { when: 'Para criar diretórios de trabalho adicionais para outras branches.', steps: ['Adicione worktree para branch desejada','Trabalhe isoladamente','Remova quando não precisar mais'], tips: 'Ótimo para revisar PRs sem bagunçar seu diretório principal.' },
+      'GC': { when: 'Ao otimizar o repositório removendo lixo e compactando.', steps: ['Execute git gc','Revise tamanho do repo','Agende limpezas periódicas'], tips: 'Economiza espaço e melhora desempenho.' },
+      'Submodule': { when: 'Para incluir outro repositório como dependência versionada.', steps: ['git submodule add <url> path','Inicialize e atualize','Documente como clonar com submodules'], tips: 'Exige atenção ao sincronizar versões entre projetos.' },
+      'Clean': { when: 'Ao remover arquivos não rastreados para limpar o diretório.', steps: ['Revise git status','Execute git clean -fd','Confirme que nada importante foi removido'], tips: 'Cuidado: remove arquivos definitivamente.' }
+    };
+    function templateFor(cat){
+      return infoTemplates[cat] || {
+        when: 'Quando o fluxo exigir ações desta categoria.',
+        steps: ['Consulte a documentação do comando','Execute com atenção às opções','Valide o resultado com status/log'],
+        tips: 'Use opções com parcimônia e confirme efeitos com git status/log.'
+      };
+    }
+    function explainForItem(it){
+      const t = templateFor(it.cat);
+      const cmdExample = generateExample(it.cmd);
+      return `
+        <div class="info-row">
+          <div><strong>Comando:</strong> <code>${cmdExample}</code></div>
+          <div><strong>O que faz:</strong> ${it.ex}</div>
+          <div><strong>Quando usar:</strong> ${t.when}</div>
+          <div><strong>Passos:</strong>
+            <ol>
+              ${t.steps.map(s=>`<li>${s}</li>`).join('')}
+            </ol>
+          </div>
+          <div><strong>Dicas:</strong> ${t.tips}</div>
+        </div>
+      `;
+    }
+
+    const infoModal = document.getElementById('infoModal');
+    const infoContent = document.getElementById('infoContent');
+    const modalClose = document.getElementById('modalClose');
+
+    function showCategoryInfo(category, items){
+      const desc = categoryDescriptions[category] || 'Comandos úteis desta categoria, com uso típico e exemplos.';
+      const html = [
+        `<div style="margin-bottom:8px;">Categoria: <strong>${category}</strong></div>`,
+        `<div style="margin-bottom:12px;">${desc}</div>`,
+        ...items.map(it=> explainForItem(it))
+      ].join('');
+      infoContent.innerHTML = html;
+      infoModal.style.display = 'flex';
+    }
+
+    function closeInfo(){ infoModal.style.display = 'none'; }
+    modalClose.addEventListener('click', closeInfo);
+    infoModal.addEventListener('click', (e)=>{ if(e.target === infoModal) closeInfo(); });
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeInfo(); });
+
+    // Icones SVG estilo Pip-Boy
+    function iconSVG(name){
+      switch(name){
+        case 'info': return '<span class="pip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="8"></line><path d="M12 10v6"></path></svg></span>';
+        case 'copy': return '<span class="pip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><rect x="3" y="3" width="13" height="13" rx="2" ry="2"></rect></svg></span>';
+        case 'play': return '<span class="pip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"></polygon></svg></span>';
+        case 'star': return '<span class="pip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg></span>';
+        case 'star-filled': return '<span class="pip-icon fill" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg></span>';
+        case 'chevron': return '<span class="pip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg></span>';
+        case 'search': return '<span class="pip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="20" y1="20" x2="16" y2="16"></line></svg></span>';
+        default: return '';
+      }
+    }
+  </script>
+</body>
+</html>

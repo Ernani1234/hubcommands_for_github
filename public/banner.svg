@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="320" viewBox="0 0 1200 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#091c12"/>
+      <stop offset="100%" stop-color="#06150e"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1200" height="320" fill="url(#bgGrad)"/>
+
+  <!-- Scanline bar -->
+  <rect id="scanline" x="0" y="-40" width="1200" height="24" fill="#00ff8f" opacity="0.16">
+    <animate attributeName="y" from="-40" to="340" dur="3.5s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Title -->
+  <g filter="url(#glow)">
+    <text x="600" y="140" text-anchor="middle" fill="#00ff8f" font-family="VT323, monospace" font-size="72" letter-spacing="2">GitHUB's HUB</text>
+    <text x="600" y="190" text-anchor="middle" fill="#a6ffdc" font-family="VT323, monospace" font-size="28">remembering all commands</text>
+  </g>
+
+  <!-- Decorative chevrons -->
+  <g stroke="#00ff8f" stroke-width="2" fill="none" opacity="0.9">
+    <polyline points="60,260 80,280 100,260"/>
+    <polyline points="1100,60 1080,80 1060,60"/>
+    <polyline points="560,230 600,270 640,230"/>
+  </g>
+
+  <!-- Subtle flicker effect on title -->
+  <g>
+    <rect x="0" y="0" width="1200" height="320" fill="none">
+      <animate attributeName="opacity" values="1;0.94;1;0.9;1" dur="4s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+</svg>

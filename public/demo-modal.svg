@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="520" viewBox="0 0 1200 520" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1e14"/>
+      <stop offset="100%" stop-color="#081910"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="520" fill="url(#bg)"/>
+
+  <!-- Header -->
+  <g filter="url(#glow)">
+    <text x="40" y="70" fill="#00ff8f" font-family="VT323, monospace" font-size="44">Modal de Informações</text>
+    <text x="40" y="110" fill="#a6ffdc" font-family="VT323, monospace" font-size="22">quando usar • passos • dicas</text>
+  </g>
+
+  <!-- Modal -->
+  <g stroke="#00ff8f" fill="#06150e" opacity="0.95">
+    <rect x="140" y="140" width="920" height="320" rx="10" ry="10" stroke-width="3"/>
+  </g>
+
+  <!-- Modal content -->
+  <g filter="url(#glow)" font-family="VT323, monospace">
+    <text x="180" y="180" fill="#00ff8f" font-size="32">Info: Commits</text>
+    <text x="180" y="220" fill="#a6ffdc" font-size="24">Quando usar:</text>
+    <text x="220" y="250" fill="#a6ffdc" font-size="22">• Para registrar alterações com mensagem clara</text>
+    <text x="220" y="280" fill="#a6ffdc" font-size="22">• Para agrupar mudanças antes de push</text>
+
+    <text x="180" y="320" fill="#a6ffdc" font-size="24">Passos:</text>
+    <text x="220" y="350" fill="#a6ffdc" font-size="22">1) git add .</text>
+    <text x="220" y="380" fill="#a6ffdc" font-size="22">2) git commit -m "mensagem"</text>
+    <text x="220" y="410" fill="#a6ffdc" font-size="22">3) git push</text>
+
+    <text x="720" y="220" fill="#a6ffdc" font-size="24">Dicas:</text>
+    <text x="760" y="250" fill="#a6ffdc" font-size="22">• Use mensagens no padrão Conventional Commits</text>
+    <text x="760" y="280" fill="#a6ffdc" font-size="22">• Amende commits pequenos com --amend</text>
+    <text x="760" y="310" fill="#a6ffdc" font-size="22">• Evite commits gigantes, prefira granularidade</text>
+  </g>
+
+  <!-- Subtle flicker overlay -->
+  <rect x="0" y="0" width="1200" height="520" fill="#00ff8f" opacity="0.02">
+    <animate attributeName="opacity" values="0.02;0.06;0.02" dur="5s" repeatCount="indefinite"/>
+  </rect>
+</svg>
